@@ -16,14 +16,20 @@
 // A null return falls through to the original SVG path, so the reference
 // behavior is untouched when no resolver is active.
 // ---------------------------------------------------------------------------
+export interface ResolvedArt {
+  src: string
+  /** True for photographic source art, which is styled as a framed portrait
+   *  rather than a transparent cut-out. */
+  photo?: boolean
+}
 export interface ArtResolver {
   character?: (
     spec: CharacterSpec,
     expression: string,
     gesture: string,
     variant: 'figure' | 'avatar'
-  ) => string | null
-  background?: (backgroundId: string | undefined) => string | null
+  ) => string | ResolvedArt | null
+  background?: (backgroundId: string | undefined) => string | ResolvedArt | null
 }
 let artResolver: ArtResolver | null = null
 export function setArtResolver(resolver: ArtResolver | null): void {
@@ -465,7 +471,9 @@ export function characterSvg(
 ): string {
   const resolved = artResolver?.character?.(spec, expression, gesture, variant)
   if (resolved) {
-    return `<img class="clyp-art clyp-art-character" src="${resolved}" alt="" aria-hidden="true" draggable="false"/>`
+    const r = typeof resolved === 'string' ? { src: resolved } : resolved
+    const cls = `clyp-art clyp-art-character${r.photo ? ' clyp-art-photo' : ''}`
+    return `<img class="${cls}" src="${r.src}" alt="" aria-hidden="true" draggable="false"/>`
   }
   const tone = SKIN_TONES.find((t) => t.id === spec.tone) ?? SKIN_TONES[0]
   const { h: hairC } = hairColors(spec.age)
@@ -1045,7 +1053,9 @@ export const BACKGROUND_LIBRARY: BackgroundDef[] = [
 export function backgroundSvg(backgroundId: string | undefined): string {
   const resolved = artResolver?.background?.(backgroundId)
   if (resolved) {
-    return `<img class="clyp-art clyp-art-bg" src="${resolved}" alt="" aria-hidden="true" draggable="false"/>`
+    const r = typeof resolved === 'string' ? { src: resolved } : resolved
+    const cls = `clyp-art clyp-art-bg${r.photo ? ' clyp-art-photo' : ''}`
+    return `<img class="${cls}" src="${r.src}" alt="" aria-hidden="true" draggable="false"/>`
   }
   return (BACKGROUND_LIBRARY.find((b) => b.id === backgroundId) ?? BACKGROUND_LIBRARY.find((b) => b.id === 'neutral'))!.svg
 }

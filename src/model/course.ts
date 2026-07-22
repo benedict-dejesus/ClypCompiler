@@ -3,6 +3,7 @@
 // Each block is an imported .clyp file (kept verbatim so it can be re-compiled
 // at any time) plus course-level metadata layered on top of it.
 import type { ClypFile } from '../clyp/types'
+import type { PhotoAsset } from '../art/photoLibrary'
 
 export const COURSE_SCHEMA_VERSION = '1.0.0'
 export const COMPILER_VERSION = '1.0.0'
@@ -212,11 +213,13 @@ export interface CourseMeta {
 }
 
 /**
- * 'rendered' — scenario/conversation characters and scene backgrounds are
- * automatically replaced with high-end raster renditions from the built-in
- * art engine. 'illustrated' — keep Clyp's original inline SVG art.
+ * How scenario/conversation character and scene art is produced:
+ *  'photo'       — use your own photoreal images from the photography library,
+ *                  falling back to rendered art for anything not yet supplied
+ *  'rendered'    — raster renditions of Clyp's vector art from the art engine
+ *  'illustrated' — keep Clyp's original inline SVG art
  */
-export type ArtStyle = 'rendered' | 'illustrated'
+export type ArtStyle = 'photo' | 'rendered' | 'illustrated'
 
 export interface Course {
   uuid: string
@@ -231,6 +234,8 @@ export interface Course {
   assets: AssetItem[]
   gamification: GamificationSettings
   gatekeeping: GatekeepingSettings
+  /** Bring-your-own photoreal art, matched to characters/scenes by filename. */
+  photos?: PhotoAsset[]
 }
 
 export function newCourse(title: string): Course {
@@ -249,7 +254,8 @@ export function newCourse(title: string): Course {
       version: '1.0'
     },
     themeId: 'clyp',
-    artStyle: 'rendered',
+    artStyle: 'photo',
+    photos: [],
     lessons: [newLesson('Lesson 1')],
     blocks: {},
     assets: [],

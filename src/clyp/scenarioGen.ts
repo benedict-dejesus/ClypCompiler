@@ -404,6 +404,14 @@ ${s} .clyp-sc-bg { line-height: 0; }
 ${s} .clyp-sc-bg svg { width: 100%; height: 160px; display: block; }
 ${s} .clyp-sc-bg img.clyp-art { width: 100%; height: 160px; display: block; object-fit: cover; }
 ${s} .clyp-sc-character img.clyp-art { width: 100%; height: auto; display: block; }
+/* Photographic portraits are framed as headshot cards so they read as a
+   deliberate composition rather than a cut-out pasted onto the scene. */
+${s} .clyp-sc-character img.clyp-art-photo {
+  aspect-ratio: 3 / 4; object-fit: cover; border-radius: 12px;
+  border: 2px solid rgba(255,255,255,0.9);
+  box-shadow: 0 6px 18px rgba(4,34,46,0.34);
+}
+${s} .clyp-sc-character.is-speaking img.clyp-art-photo { box-shadow: 0 8px 26px rgba(4,34,46,0.45); }
 ${s} .clyp-sc-cast { display: flex; justify-content: center; gap: 16px; margin-top: -74px; position: relative; }
 ${s} .clyp-sc-character { margin: 0; width: 96px; text-align: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s; }
 ${s} .clyp-sc-character svg { width: 100%; height: auto; }

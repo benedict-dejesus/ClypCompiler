@@ -6,6 +6,7 @@ import { storageGet, storageSet, storageDel, storageKeys, STORAGE_PREFIX } from 
 import type { Course, Lesson, CourseBlock, AssetItem, AssetOverride } from '../model/course'
 import { newCourse, newLesson, COURSE_SCHEMA_VERSION } from '../model/course'
 import { parseClypFile } from '../clyp/compile'
+import { ingestPhoto, type PhotoAsset } from '../art/photoLibrary'
 import { validate } from '../clyp/validator'
 import type { ValidationIssue } from '../clyp/types'
 
@@ -36,6 +37,7 @@ type View = 'start' | 'builder' | 'player'
 export type SelectionKind =
   | { kind: 'course' }
   | { kind: 'assets' }
+  | { kind: 'photography' }
   | { kind: 'lesson'; lessonId: string }
   | { kind: 'block'; lessonId: string; blockId: string }
 
@@ -70,6 +72,9 @@ interface AppState {
   moveBlockToLesson: (fromLessonId: string, blockId: string, toLessonId: string) => void
   addAsset: (name: string, mime: string, dataUrl: string) => void
   removeAsset: (assetId: string) => void
+  addPhotos: (files: FileList | File[]) => Promise<{ added: number; failed: { fileName: string; error: string }[] }>
+  removePhoto: (photoId: string) => void
+  clearPhotos: () => void
   setAssetOverride: (blockId: string, slotIndex: number, assetId: string | null, fit: 'cover' | 'contain') => void
 }
 
@@ -302,6 +307,40 @@ export const useStore = create<AppState>((set, get) => ({
       for (const b of Object.values(c.blocks)) {
         b.assetOverrides = b.assetOverrides.filter((o) => o.assetId !== assetId)
       }
+    })
+  },
+
+  addPhotos: async (files) => {
+    const list = Array.from(files)
+    const accepted: PhotoAsset[] = []
+    const failed: { fileName: string; error: string }[] = []
+    for (const file of list) {
+      const result = await ingestPhoto(file)
+      if (result.ok && result.asset) accepted.push(result.asset)
+      else failed.push({ fileName: result.fileName, error: result.error ?? 'Could not import.' })
+    }
+    if (accepted.length > 0) {
+      get().mutate((c) => {
+        if (!c.photos) c.photos = []
+        for (const p of accepted) {
+          // Re-dropping the same filename replaces the previous version.
+          c.photos = c.photos.filter((existing) => existing.key !== p.key)
+          c.photos.push(p)
+        }
+      })
+    }
+    return { added: accepted.length, failed }
+  },
+
+  removePhoto: (photoId) => {
+    get().mutate((c) => {
+      c.photos = (c.photos ?? []).filter((p) => p.id !== photoId)
+    })
+  },
+
+  clearPhotos: () => {
+    get().mutate((c) => {
+      c.photos = []
     })
   },
 

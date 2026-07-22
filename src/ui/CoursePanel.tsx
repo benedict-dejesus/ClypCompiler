@@ -103,7 +103,17 @@ export function CoursePanel() {
         </p>
         <div className="art-style-grid">
           <button
-            className={`art-style-chip ${(course.artStyle ?? 'rendered') === 'rendered' ? 'is-selected' : ''}`}
+            className={`art-style-chip ${(course.artStyle ?? 'photo') === 'photo' ? 'is-selected' : ''}`}
+            onClick={() => mutate((c) => void (c.artStyle = 'photo'))}
+          >
+            <b>📸 Photoreal</b>
+            <span>
+              Your own AI-generated photography from <b>Scenario photography</b>. Anything not yet
+              supplied falls back to rendered art.
+            </span>
+          </button>
+          <button
+            className={`art-style-chip ${course.artStyle === 'rendered' ? 'is-selected' : ''}`}
             onClick={() => mutate((c) => void (c.artStyle = 'rendered'))}
           >
             <b>✨ Rendered</b>

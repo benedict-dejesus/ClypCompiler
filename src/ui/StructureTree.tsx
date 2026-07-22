@@ -52,6 +52,13 @@ export function StructureTree() {
           ⚙ Course settings
         </button>
         <button
+          className={`tree-item tree-course ${selection.kind === 'photography' ? 'is-selected' : ''}`}
+          onClick={() => select({ kind: 'photography' })}
+        >
+          📸 Scenario photography
+          <span className="tree-count">{(course.photos ?? []).length}</span>
+        </button>
+        <button
           className={`tree-item tree-course ${selection.kind === 'assets' ? 'is-selected' : ''}`}
           onClick={() => select({ kind: 'assets' })}
         >

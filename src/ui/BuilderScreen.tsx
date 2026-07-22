@@ -7,6 +7,7 @@ import { CoursePanel } from './CoursePanel'
 import { LessonPanel } from './LessonPanel'
 import { BlockPanel } from './BlockPanel'
 import { AssetsPanel } from './AssetsPanel'
+import { PhotographyPanel } from './PhotographyPanel'
 
 export function BuilderScreen() {
   const course = useStore((s) => s.course)
@@ -98,6 +99,7 @@ export function BuilderScreen() {
         <main className="detail">
           {selection.kind === 'course' && <CoursePanel />}
           {selection.kind === 'assets' && <AssetsPanel />}
+          {selection.kind === 'photography' && <PhotographyPanel />}
           {selection.kind === 'lesson' && <LessonPanel lessonId={selection.lessonId} />}
           {selection.kind === 'block' && <BlockPanel lessonId={selection.lessonId} blockId={selection.blockId} />}
         </main>

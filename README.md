@@ -30,7 +30,12 @@ Sample `.clyp` blocks are included under `public/samples/` for trying the app.
   - **Gamification** — XP per block (with per-block overrides), lesson bonuses, levels, automatic lesson/course badges plus custom badges (XP-threshold, lesson or course triggered), live XP bar and toasts in the player.
   - **Gatekeeping** — linear or free lesson navigation, lock icons, per-block completion rules (interactive blocks complete via their built-in completion gate; reading blocks complete on view), optional completion screen.
   - **Themes** — six course-wide themes, overridable per lesson.
-- **Built-in art library + automatic replacement** — Clyp draws characters and scene backgrounds as inline SVG. With the **Rendered** art style (the default), ClypCompiler rasterizes them at compile time into high-end images: a cinematic color grade, warm rim light and contact shadow on characters (transparent PNG), and volumetric light shafts, split-tone grade, vignette and film grain on scenes (JPEG). Every variant your course actually uses is covered — role × gender × age × skin tone × expression × gesture — because rendering is driven by a discovery pass over the compiled course, not a fixed pre-baked set. Switch to **Illustrated** in *Course settings → Character & scene art* to keep the original vectors (smallest packages, infinitely sharp). Browse the whole library, or add any piece to your course assets, under **Assets library**.
+- **Scenario photography (bring-your-own AI images)** — the way to get genuinely top-grade art into branching scenarios and conversations. ClypCompiler works out exactly which images your course needs (a discovery pass over the compiled course: role × gender × age × skin tone × expression × gesture, plus every scene), and for each one gives you a **production-ready photoreal prompt** and the **filename to save it as**. Generate them in any tool — Midjourney, Firefly, gpt-image-1, whatever you prefer — drop the folder in, and they are matched automatically.
+  - **Consistent characters.** Each character spec is hashed into a fixed physical description (hair, face, distinguishing feature, build) that is repeated verbatim in every prompt for that character, so the same person appears across all their expressions in any tool. Pair it with a seed or character reference for an exact lock.
+  - **Filename fallback.** `char__manager__female__adult__light__happy__pointing` matches exactly; `…__happy` covers every gesture for that expression; `…__light` covers that character everywhere. Generate the specific ones only where it matters.
+  - **Partial sets are fine.** Anything you haven't supplied falls back to rendered art, so the course always compiles and exports.
+  - Images are downscaled on import to keep courses portable, and only images actually used are packaged.
+- **Built-in art library** — with the **Rendered** art style, ClypCompiler rasterizes Clyp's vector art at compile time with a cinematic grade, rim light and contact shadow on characters, and light shafts, split-tone, vignette and grain on scenes. Useful as a fallback layer, or on its own. **Illustrated** keeps the original vectors (smallest packages, infinitely sharp).
 - **Assets Library** — upload your own images and assign them in place of the image placeholders or SVG graphics inside any block; choose fill or fit. Only assets actually used are packaged.
 - **Mobile-friendly output** — the generated player is mobile-first (off-canvas lesson drawer under 900 px) and Clyp blocks are mobile-first by design. The in-app player previews mobile / tablet / desktop widths.
 - **SCORM or HTML5 export** — one click produces a zip. The SCORM 1.2 package (with `imsmanifest.xml`) reports status, score and suspend data to any compliant LMS. **Either package's extracted `index.html` is a fully functional web course without an LMS** — progress falls back to `localStorage`.
@@ -42,8 +47,9 @@ Sample `.clyp` blocks are included under `public/samples/` for trying the app.
 1. **Create a course** on the start screen (recent projects are stored locally).
 2. **Import `.clyp` files** into lessons via the structure tree ("+ Import .clyp blocks").
 3. Configure **course settings** (details, theme, art style, gamification, gatekeeping), **lessons** (title, description, theme override, badge icon) and **blocks** (title, XP override, image/SVG replacement, per-block preview).
-4. **Preview** the course player, then **Export** as SCORM 1.2 or HTML5.
-5. Optionally **Save project** as a `.clypcourse` file to share or back up.
+4. For scenarios and conversations, open **Scenario photography**: download the image brief, generate the images, drop them back in. Coverage updates as they match.
+5. **Preview** the course player, then **Export** as SCORM 1.2 or HTML5.
+6. Optionally **Save project** as a `.clypcourse` file to share or back up.
 
 ## Desktop launcher
 

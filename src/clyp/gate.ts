@@ -94,9 +94,13 @@ ${status}
 /** Tracking runtime. Defines gateMark(key) for the block's own handlers. */
 export function gateJs(rootEl: string, cfg: GateConfig): string {
   if (!cfg.enabled) {
-    // Always define a no-op so block code can call gateMark unconditionally.
+    // Always define no-ops so block code can call these unconditionally.
+    // Both are required: assessment blocks call gateSatisfy() the moment the
+    // learner passes, so omitting it throws a ReferenceError on success and
+    // drops the learner into the graceful-failure message.
     return `
-  function gateMark() { /* completion gate disabled for this block */ }`
+  function gateMark() { /* completion gate disabled for this block */ }
+  function gateSatisfy() { /* completion gate disabled for this block */ }`
   }
   return `
   /* Completion gate: a reminder states what is still required, then becomes the

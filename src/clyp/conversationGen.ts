@@ -364,6 +364,8 @@ ${s} .clyp-cv-topbar { display: flex; align-items: center; gap: 10px; padding: 1
 ${s} .clyp-cv-tb-avatar { width: 34px; height: 34px; border-radius: 50%; overflow: hidden; background: #dceae8; display: inline-flex; align-items: flex-end; justify-content: center; flex: none; color: #013d4a; font-weight: 700; }
 ${s} .clyp-cv-tb-avatar svg { width: 34px; height: 38px; }
 ${s} .clyp-cv-tb-avatar img.clyp-art, ${s} .clyp-cv-avatar img.clyp-art { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Photographic avatars fill the circular frame, cropped to the face. */
+${s} .clyp-cv-tb-avatar img.clyp-art-photo, ${s} .clyp-cv-avatar img.clyp-art-photo { object-position: 50% 22%; }
 ${s} .clyp-cv-tb-col { display: flex; flex-direction: column; line-height: 1.25; }
 ${s} .clyp-cv-tb-name { font-weight: 700; }
 ${s} .clyp-cv-tb-sub, ${s} .clyp-cv-tb-subject { font-size: 0.78em; opacity: 0.85; }

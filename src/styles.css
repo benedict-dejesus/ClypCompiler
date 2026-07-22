@@ -605,6 +605,47 @@ code {
 .asset-card:hover .asset-delete, .asset-card:hover .asset-add { opacity: 1; transform: scale(1); }
 .asset-confirm { position: absolute; top: 8px; right: 8px; display: flex; gap: 5px; animation: pop var(--t-fast) var(--ease-spring) both; }
 
+/* ====================================================== photography panel */
+.coverage-track { height: 10px; border-radius: 99px; background: var(--line-soft); overflow: hidden; }
+.coverage-fill {
+  height: 100%; border-radius: 99px;
+  background: linear-gradient(90deg, var(--teal-600), var(--mint-500));
+  transition: width var(--t-slow) var(--ease-out);
+}
+.spacer { flex: 1; }
+.seg { display: inline-flex; border: 1.5px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button {
+  border: 0; background: var(--surface); color: var(--ink-soft);
+  font-size: 0.74rem; font-weight: 700; padding: 5px 11px; cursor: pointer;
+  transition: background-color var(--t-fast), color var(--t-fast);
+}
+.seg button + button { border-left: 1.5px solid var(--line); }
+.seg button.is-on { background: var(--teal-600); color: #fff; }
+
+.need-list { display: flex; flex-direction: column; gap: 2px; }
+.need-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 11px 10px; border-radius: var(--r-sm);
+  border-left: 3px solid transparent;
+  transition: background-color var(--t-fast), border-color var(--t-fast);
+}
+.need-row:hover { background: var(--surface-sunk); }
+.need-row.is-filled { border-left-color: var(--mint-500); }
+.need-thumb {
+  flex: 0 0 54px; height: 66px; border-radius: 8px; overflow: hidden;
+  border: 1px solid var(--line);
+  background: repeating-conic-gradient(#eaeff0 0% 25%, #fff 0% 50%) 0 0 / 12px 12px;
+  display: grid; place-items: center;
+}
+.need-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.need-empty { color: var(--ink-faint); font-size: 1.25rem; font-weight: 700; }
+.need-info { flex: 1 1 220px; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.need-info b { font-size: 0.84rem; }
+.need-file { font-size: 0.7rem; align-self: flex-start; word-break: break-all; }
+.need-meta { font-size: 0.72rem; color: var(--ink-faint); }
+.need-row.is-filled .need-meta { color: #0b7d56; font-weight: 600; }
+.need-actions { display: flex; gap: 6px; align-items: center; flex: none; }
+
 /* ============================================================ block panel */
 .slot-row {
   display: flex; align-items: center; gap: 14px;

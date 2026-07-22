@@ -20,8 +20,10 @@ import {
 } from '../clyp/assets'
 import type { Course } from '../model/course'
 import { compileCourse } from '../export/compileCourse'
+import type { ArtVariant, CharacterNeed, SceneNeed } from './artKeys'
+import { buildPhotoIndex, resolveCharacterPhoto, resolveScenePhoto } from './photoLibrary'
 
-export type ArtVariant = 'figure' | 'avatar'
+export type { ArtVariant } from './artKeys'
 
 export interface ArtAsset {
   /** Unique art key, e.g. `char|manager~male~adult~light|happy|pointing|figure`. */
@@ -32,6 +34,8 @@ export interface ArtAsset {
   dataUrl: string
   /** Relative file path used inside exported zips. */
   fileName: string
+  /** Photographic art is framed differently from transparent vector art. */
+  source?: 'photo' | 'rendered'
 }
 
 // ---------------------------------------------------------------------------
@@ -209,6 +213,43 @@ export interface PreparedArt {
   assets: Map<string, ArtAsset>
 }
 
+/**
+ * Enumerates every character variant and scene the course actually uses, by
+ * compiling it with a collecting resolver. This drives both the art renderer
+ * and the "images you still need to generate" checklist.
+ */
+export function discoverCourseArt(course: Course): {
+  characters: CharacterNeed[]
+  scenes: SceneNeed[]
+} {
+  const chars = new Map<string, CharacterNeed>()
+  const scenes = new Set<string>()
+
+  setArtResolver({
+    character: (spec, expression, gesture, variant) => {
+      const k = `${specKey(spec)}|${expression}|${gesture}`
+      const existing = chars.get(k)
+      if (existing) existing.variants.add(variant)
+      else chars.set(k, { kind: 'character', spec, expression, gesture, variants: new Set([variant]) })
+      return null
+    },
+    background: (backgroundId) => {
+      scenes.add(backgroundId ?? 'neutral')
+      return null
+    }
+  })
+  try {
+    compileCourse(course, (a) => a.dataUrl)
+  } finally {
+    setArtResolver(null)
+  }
+
+  return {
+    characters: [...chars.values()],
+    scenes: [...scenes].map((backgroundId) => ({ kind: 'scene' as const, backgroundId }))
+  }
+}
+
 function slugForKey(key: string): string {
   return key.replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase().slice(0, 70)
 }
@@ -218,6 +259,74 @@ function slugForKey(key: string): string {
  * character/background variant it actually uses. Pass 2 (the real compile in
  * zip.ts) then swaps each one for its rendered image.
  */
+/**
+ * Prepares art for the 'photo' style: any character/scene covered by the
+ * photography library uses that image; anything not yet supplied falls back to
+ * the rendered art engine, so a half-finished library still exports cleanly.
+ */
+export async function prepareCoursePhotoArt(course: Course): Promise<PreparedArt> {
+  const index = buildPhotoIndex(course.photos ?? [])
+  const rendered = await prepareCourseArt(course)
+  const assets = new Map(rendered.assets)
+
+  let n = assets.size
+  const { characters, scenes } = discoverCourseArt(course)
+
+  for (const need of characters) {
+    const photo = resolveCharacterPhoto(index, need.spec, need.expression, need.gesture)
+    if (!photo) continue
+    const ext = photo.mime === 'image/png' ? 'png' : 'jpg'
+    for (const variant of need.variants) {
+      const key = characterArtKey(need.spec, need.expression, need.gesture, variant)
+      assets.set(key, {
+        key,
+        kind: 'character',
+        label: `${photo.originalName} (${variant})`,
+        mime: photo.mime as ArtAsset['mime'],
+        source: 'photo',
+        dataUrl: photo.dataUrl,
+        fileName: `assets/art/${String(++n).padStart(3, '0')}-${photo.key}-${variant}.${ext}`
+      })
+    }
+  }
+
+  for (const scene of scenes) {
+    const photo = resolveScenePhoto(index, scene.backgroundId)
+    if (!photo) continue
+    const ext = photo.mime === 'image/png' ? 'png' : 'jpg'
+    const key = backgroundArtKey(scene.backgroundId)
+    assets.set(key, {
+      key,
+      kind: 'background',
+      label: photo.originalName,
+      mime: photo.mime as ArtAsset['mime'],
+      source: 'photo',
+      dataUrl: photo.dataUrl,
+      fileName: `assets/art/${String(++n).padStart(3, '0')}-${photo.key}.${ext}`
+    })
+  }
+
+  return { assets }
+}
+
+/** Coverage summary for the photography UI. */
+export function photoCoverage(course: Course): {
+  characters: { need: CharacterNeed; photo: ReturnType<typeof resolveCharacterPhoto> }[]
+  scenes: { need: SceneNeed; photo: ReturnType<typeof resolveScenePhoto> }[]
+  filled: number
+  total: number
+} {
+  const index = buildPhotoIndex(course.photos ?? [])
+  const { characters, scenes } = discoverCourseArt(course)
+  const c = characters.map((need) => ({
+    need,
+    photo: resolveCharacterPhoto(index, need.spec, need.expression, need.gesture)
+  }))
+  const s = scenes.map((need) => ({ need, photo: resolveScenePhoto(index, need.backgroundId) }))
+  const filled = c.filter((x) => x.photo).length + s.filter((x) => x.photo).length
+  return { characters: c, scenes: s, filled, total: c.length + s.length }
+}
+
 export async function prepareCourseArt(course: Course): Promise<PreparedArt> {
   const charKeys = new Map<string, { spec: CharacterSpec; expression: string; gesture: string; variant: ArtVariant }>()
   const bgKeys = new Set<string>()
@@ -278,11 +387,14 @@ export function artResolverFor(
   return {
     character: (spec, expression, gesture, variant) => {
       const asset = prepared.assets.get(characterArtKey(spec, expression, gesture, variant))
-      return asset ? urlFor(asset) : null
+      // A photo with real transparency is a cut-out, so it needs no framing.
+      return asset
+        ? { src: urlFor(asset), photo: asset.source === 'photo' && asset.mime !== 'image/png' }
+        : null
     },
     background: (backgroundId) => {
       const asset = prepared.assets.get(backgroundArtKey(backgroundId))
-      return asset ? urlFor(asset) : null
+      return asset ? { src: urlFor(asset), photo: asset.source === 'photo' } : null
     }
   }
 }

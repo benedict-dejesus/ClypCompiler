@@ -8,7 +8,13 @@ import { compileCourse, type CourseCompileResult } from './compileCourse'
 import { buildCourseHtml } from './runtime'
 import { buildScormManifest } from './scorm'
 import { setArtResolver } from '../clyp/assets'
-import { prepareCourseArt, artResolverFor, type PreparedArt, type ArtAsset } from '../art/artEngine'
+import {
+  prepareCourseArt,
+  prepareCoursePhotoArt,
+  artResolverFor,
+  type PreparedArt,
+  type ArtAsset
+} from '../art/artEngine'
 
 /**
  * Renders every character/background variant the course uses (art style
@@ -16,9 +22,10 @@ import { prepareCourseArt, artResolverFor, type PreparedArt, type ArtAsset } fro
  * Failures degrade gracefully to SVG — an export never breaks over art.
  */
 async function prepareArtIfEnabled(course: Course): Promise<PreparedArt | null> {
-  if ((course.artStyle ?? 'rendered') !== 'rendered') return null
+  const style = course.artStyle ?? 'photo'
+  if (style === 'illustrated') return null
   try {
-    return await prepareCourseArt(course)
+    return style === 'photo' ? await prepareCoursePhotoArt(course) : await prepareCourseArt(course)
   } catch {
     return null
   }
