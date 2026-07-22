@@ -6,6 +6,7 @@ import { storageGet, storageSet, storageDel, storageKeys, STORAGE_PREFIX } from 
 import type { Course, Lesson, CourseBlock, AssetItem, AssetOverride } from '../model/course'
 import { newCourse, newLesson, COURSE_SCHEMA_VERSION } from '../model/course'
 import { parseClypFile } from '../clyp/compile'
+import { parseClyppedCode } from '../clyp/parsePasted'
 import { ingestPhoto, type PhotoAsset } from '../art/photoLibrary'
 import { validate } from '../clyp/validator'
 import type { ValidationIssue } from '../clyp/types'
@@ -54,6 +55,8 @@ interface AppState {
   createCourse: (title: string) => void
   openCourse: (uuid: string) => Promise<void>
   importCourseFile: (text: string) => { ok: boolean; error?: string }
+  /** Loads an in-memory course (used by the template gallery). */
+  loadCourse: (course: Course) => void
   closeCourse: () => void
   deleteProject: (uuid: string) => Promise<void>
   setView: (v: View) => void
@@ -67,6 +70,11 @@ interface AppState {
   removeLesson: (lessonId: string) => void
   moveLesson: (lessonId: string, dir: -1 | 1) => void
   importClypFiles: (files: { name: string; text: string }[], lessonId: string) => ImportReport[]
+  addPastedBlock: (
+    code: string,
+    lessonId: string,
+    title?: string
+  ) => { ok: boolean; error?: string; warnings: string[]; blockId?: string }
   removeBlock: (lessonId: string, blockId: string) => void
   moveBlock: (lessonId: string, blockId: string, dir: -1 | 1) => void
   moveBlockToLesson: (fromLessonId: string, blockId: string, toLessonId: string) => void
@@ -153,6 +161,11 @@ export const useStore = create<AppState>((set, get) => ({
     } catch {
       return { ok: false, error: 'The file is not valid JSON.' }
     }
+  },
+
+  loadCourse: (course) => {
+    set({ course, view: 'builder', selection: { kind: 'course' }, dirty: false })
+    void persist(course)
   },
 
   closeCourse: () => {
@@ -256,6 +269,32 @@ export const useStore = create<AppState>((set, get) => ({
       })
     }
     return reports
+  },
+
+  addPastedBlock: (code, lessonId, title) => {
+    const parsed = parseClyppedCode(code)
+    if (!parsed.ok || !parsed.block) {
+      return { ok: false, error: parsed.error, warnings: parsed.warnings }
+    }
+    const id = crypto.randomUUID()
+    const b = parsed.block
+    const block: CourseBlock = {
+      id,
+      title: (title || '').trim() || b.projectName || b.blockLabel,
+      source: 'pasted',
+      pasted: b,
+      sourceFileName: 'pasted clypped code',
+      assetOverrides: [],
+      xpOverride: null
+    }
+    get().mutate((c) => {
+      const lesson = c.lessons.find((l) => l.id === lessonId)
+      if (!lesson) return
+      c.blocks[id] = block
+      lesson.blockIds.push(id)
+    })
+    set({ selection: { kind: 'block', lessonId, blockId: id } })
+    return { ok: true, warnings: parsed.warnings, blockId: id }
   },
 
   removeBlock: (lessonId, blockId) => {

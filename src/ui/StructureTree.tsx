@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { useStore } from '../store/store'
 import { catalogEntry } from '../clyp/catalog'
+import { PasteBlockDialog } from './PasteBlockDialog'
 
 const FAMILY_ICONS: Record<string, string> = {
   content: '📄',
@@ -19,6 +20,7 @@ export function StructureTree() {
   const notify = useStore((s) => s.notify)
   const fileRef = useRef<HTMLInputElement>(null)
   const [importTarget, setImportTarget] = useState<string | null>(null)
+  const [pasteTarget, setPasteTarget] = useState<string | null>(null)
 
   if (!course) return null
 
@@ -86,7 +88,11 @@ export function StructureTree() {
               {lesson.blockIds.map((bid, bi) => {
                 const block = course.blocks[bid]
                 if (!block) return null
-                const entry = catalogEntry(block.clyp.block.blockType)
+                const entry = block.clyp ? catalogEntry(block.clyp.block.blockType) : null
+                const icon = entry ? (FAMILY_ICONS[entry.family] ?? '📄') : '📋'
+                const kindLabel = entry
+                  ? entry.label
+                  : `${block.pasted?.blockLabel ?? 'Pasted block'} · pasted`
                 const selected =
                   selection.kind === 'block' && selection.blockId === bid
                 return (
@@ -95,10 +101,10 @@ export function StructureTree() {
                       className={`tree-item tree-block ${selected ? 'is-selected' : ''}`}
                       onClick={() => select({ kind: 'block', lessonId: lesson.id, blockId: bid })}
                     >
-                      <span className="tree-block-icon">{FAMILY_ICONS[entry.family] ?? '📄'}</span>
+                      <span className="tree-block-icon">{icon}</span>
                       <span className="tree-label">
                         {block.title}
-                        <small>{entry.label}</small>
+                        <small>{kindLabel}</small>
                       </span>
                       <span className="tree-mini-actions">
                         <button title="Move up" disabled={bi === 0} onClick={(e) => { e.stopPropagation(); moveBlock(lesson.id, bid, -1) }}>↑</button>
@@ -108,9 +114,16 @@ export function StructureTree() {
                   </li>
                 )
               })}
-              <li>
+              <li className="tree-add-row">
                 <button className="tree-import" onClick={() => startImport(lesson.id)}>
-                  + Import .clyp blocks
+                  + Import .clyp
+                </button>
+                <button
+                  className="tree-import"
+                  title="Paste clypped code copied from Clyp"
+                  onClick={() => setPasteTarget(lesson.id)}
+                >
+                  📋 Paste code
                 </button>
               </li>
             </ul>
@@ -132,6 +145,10 @@ export function StructureTree() {
           e.target.value = ''
         }}
       />
+
+      {pasteTarget && (
+        <PasteBlockDialog lessonId={pasteTarget} onClose={() => setPasteTarget(null)} />
+      )}
     </aside>
   )
 }

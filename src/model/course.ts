@@ -3,6 +3,7 @@
 // Each block is an imported .clyp file (kept verbatim so it can be re-compiled
 // at any time) plus course-level metadata layered on top of it.
 import type { ClypFile } from '../clyp/types'
+import type { PastedBlock } from '../clyp/parsePasted'
 import type { PhotoAsset } from '../art/photoLibrary'
 
 export const COURSE_SCHEMA_VERSION = '1.0.0'
@@ -182,14 +183,36 @@ export interface CourseBlock {
   id: string
   /** Display title in the builder (defaults to the .clyp project name). */
   title: string
-  /** The imported .clyp file, verbatim. */
-  clyp: ClypFile
+  /**
+   * How this block entered the course:
+   *  'clyp'   — a .clyp source file, recompiled by ClypCompiler on every export
+   *             (can be re-validated and re-rendered with photoreal art)
+   *  'pasted' — clypped code pasted from Clyp, already compiled, embedded as-is
+   * Absent on projects created before pasted blocks existed; treat as 'clyp'.
+   */
+  source?: 'clyp' | 'pasted'
+  /** The imported .clyp file, verbatim. Present when source is 'clyp'. */
+  clyp?: ClypFile
+  /** Pre-compiled block. Present when source is 'pasted'. */
+  pasted?: PastedBlock
   /** Original file name of the import, for reference. */
   sourceFileName: string
   /** Asset replacements applied to this block's compiled HTML. */
   assetOverrides: AssetOverride[]
   /** Per-block XP override; null uses the course default. */
   xpOverride: number | null
+}
+
+/** True when the block is pre-compiled clypped code rather than .clyp source. */
+export function isPastedBlock(
+  block: CourseBlock
+): block is CourseBlock & { pasted: PastedBlock } {
+  return block.source === 'pasted' && !!block.pasted
+}
+
+/** True when the block carries recompilable .clyp source. */
+export function isClypBlock(block: CourseBlock): block is CourseBlock & { clyp: ClypFile } {
+  return !!block.clyp
 }
 
 export interface Lesson {

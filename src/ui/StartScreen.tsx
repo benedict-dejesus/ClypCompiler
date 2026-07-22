@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { useStore } from '../store/store'
+import { TemplateGallery } from './TemplateGallery'
 
 export function StartScreen() {
   const projects = useStore((s) => s.projects)
@@ -10,6 +11,7 @@ export function StartScreen() {
   const notify = useStore((s) => s.notify)
   const [title, setTitle] = useState('')
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [showGallery, setShowGallery] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const onOpenFile = async (file: File) => {
@@ -41,6 +43,9 @@ export function StartScreen() {
           />
           <button className="btn btn-primary" onClick={() => createCourse(title.trim())}>
             Create course
+          </button>
+          <button className="btn btn-secondary" onClick={() => setShowGallery(true)}>
+            ✨ Start from a template
           </button>
           <button className="btn btn-ghost" onClick={() => fileRef.current?.click()}>
             Open .clypcourse file
@@ -96,6 +101,8 @@ export function StartScreen() {
         </ul>
         <p className="start-foot">Created by Benedict de Jesus · Blocks are authored in Clyp and imported here as .clyp files.</p>
       </div>
+
+      {showGallery && <TemplateGallery onClose={() => setShowGallery(false)} />}
     </div>
   )
 }

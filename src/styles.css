@@ -731,6 +731,116 @@ code {
 .problem ul { margin: 0; padding-left: 19px; font-size: 0.82rem; line-height: 1.6; }
 .problem em { color: var(--ink-soft); }
 
+/* ======================================================= template gallery */
+.modal-gallery { max-width: 1080px; max-height: 88vh; }
+.gallery-head { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 16px; }
+.gallery-head > div { flex: 1; }
+.gallery-head .modal-title { margin-bottom: 6px; }
+.gallery-filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 18px; }
+.gallery-filters input {
+  flex: 1 1 240px; border: 1.5px solid var(--line); border-radius: var(--r-sm);
+  padding: 9px 13px; font-size: 0.87rem;
+  transition: border-color var(--t), box-shadow var(--t);
+}
+.gallery-filters input:focus { outline: none; border-color: var(--mint-500); box-shadow: var(--glow-mint); }
+.gallery-seg { flex-wrap: wrap; }
+
+.gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+.tpl-card {
+  border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden;
+  background: var(--surface); box-shadow: var(--sh-1);
+  display: flex; flex-direction: column;
+  animation: pop var(--t) var(--ease-out) both;
+  transition: transform var(--t) var(--ease), box-shadow var(--t) var(--ease), border-color var(--t);
+}
+.tpl-card:hover { transform: translateY(-3px); box-shadow: var(--sh-3); border-color: var(--mint-400); }
+.tpl-card.is-open { border-color: var(--mint-500); box-shadow: var(--sh-3); }
+.tpl-swatch {
+  height: 76px; position: relative; display: flex; align-items: flex-end;
+  justify-content: space-between; padding: 10px 14px; color: #fff;
+}
+.tpl-swatch::after {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(180px 90px at 88% -20%, rgba(255,255,255,0.32), transparent 70%);
+}
+.tpl-industry, .tpl-mins {
+  position: relative; z-index: 1;
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+  background: rgba(0,0,0,0.24); border-radius: 99px; padding: 3px 10px;
+}
+.tpl-body { padding: 15px 16px 16px; display: flex; flex-direction: column; gap: 7px; flex: 1; }
+.tpl-body h3 { margin: 0; font-size: 1rem; line-height: 1.32; color: var(--teal-800); }
+.tpl-company { margin: 0; font-size: 0.74rem; font-weight: 700; color: var(--mint-500); letter-spacing: 0.02em; }
+.tpl-summary { margin: 2px 0 0; font-size: 0.8rem; line-height: 1.55; color: var(--ink-soft); }
+.tpl-meta { display: flex; gap: 12px; font-size: 0.72rem; color: var(--ink-faint); font-weight: 700; }
+.tpl-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.tpl-tag {
+  font-size: 0.66rem; background: var(--line-soft); color: var(--ink-soft);
+  border-radius: 99px; padding: 2px 9px; font-weight: 600;
+}
+.tpl-detail {
+  margin-top: 6px; padding-top: 11px; border-top: 1px solid var(--line-soft);
+  animation: rise var(--t) var(--ease-out) both;
+}
+.tpl-detail h4 { margin: 10px 0 3px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-faint); }
+.tpl-detail h4:first-child { margin-top: 0; }
+.tpl-detail p { margin: 0; font-size: 0.78rem; line-height: 1.55; color: var(--ink-soft); }
+.tpl-lessons { margin: 4px 0 0; padding-left: 18px; font-size: 0.78rem; line-height: 1.6; color: var(--ink); }
+.tpl-actions { display: flex; gap: 7px; margin-top: auto; padding-top: 11px; }
+
+/* ==================================================== paste clypped code */
+.modal-wide { max-width: 860px; }
+.modal-title { color: var(--teal-700) !important; }
+.card-info { border-color: #cfe3ea; background: linear-gradient(180deg, #fff, #f2f9fb); }
+.card-info h3 { color: var(--teal-700); }
+.tree-add-row { display: flex; gap: 5px; }
+.tree-add-row .tree-import { flex: 1; font-size: 0.74rem; padding: 7px 6px; }
+
+/* Form controls inside dialogs get the same treatment as panel forms, which
+   are scoped to .panel. */
+.modal label:not(.check) {
+  display: flex; flex-direction: column; gap: 6px;
+  font-size: 0.755rem; font-weight: 700; color: var(--ink-soft); letter-spacing: 0.02em;
+}
+.modal input[type='text'], .modal input:not([type]), .modal textarea:not(.paste-area), .modal select {
+  border: 1.5px solid var(--line); border-radius: var(--r-sm);
+  padding: 9px 11px; font-size: 0.875rem; font-weight: 400;
+  color: var(--ink); background: var(--surface); width: 100%;
+  transition: border-color var(--t), box-shadow var(--t);
+}
+.modal input:focus, .modal textarea:focus, .modal select:focus {
+  outline: none; border-color: var(--mint-500); box-shadow: var(--glow-mint);
+}
+
+.paste-area {
+  width: 100%; margin-top: 10px;
+  border: 1.5px solid var(--line); border-radius: var(--r-sm);
+  padding: 11px 13px;
+  font-family: 'Cascadia Code', Consolas, monospace;
+  font-size: 0.76rem; line-height: 1.5;
+  color: var(--ink); background: var(--surface-sunk);
+  resize: vertical;
+  transition: border-color var(--t), box-shadow var(--t);
+}
+.paste-area:focus { outline: none; border-color: var(--mint-500); box-shadow: var(--glow-mint); background: var(--surface); }
+
+.paste-summary {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  margin-top: 12px; font-size: 0.76rem; color: var(--ink-soft);
+  animation: pop var(--t-fast) var(--ease-out) both;
+}
+.paste-pill {
+  background: linear-gradient(180deg, var(--teal-600), var(--teal-700));
+  color: #fff; border-radius: 99px; padding: 3px 11px; font-weight: 700;
+}
+.paste-pill.is-gate { background: linear-gradient(180deg, var(--mint-400), var(--mint-500)); color: #01362a; }
+.paste-error {
+  margin: 12px 0 0; padding: 10px 13px; border-radius: var(--r-sm);
+  background: var(--danger-soft); color: var(--danger);
+  font-size: 0.82rem; font-weight: 600; border: 1px solid #f0d3d0;
+}
+.paste-warning { margin: 8px 0 0; font-size: 0.79rem; color: var(--warn); }
+
 /* ================================================================ notices */
 .notices {
   position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);

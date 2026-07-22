@@ -58,12 +58,58 @@ function listen(port, attemptsLeft = 12) {
   server.listen(port, '127.0.0.1', () => {
     const url = `http://127.0.0.1:${port}/`
     console.log('\n  ClypCompiler is running at ' + url)
-    console.log('  Keep this window open while you work. Close it to quit.\n')
+    console.log('  Keep this window open while you work. Close it to quit.')
     open(url)
   })
 }
 
+/**
+ * Chromium's --app flag opens a standalone window with no tab strip, address
+ * bar or bookmarks — ClypCompiler then looks like a desktop application rather
+ * than a web page. The default browser profile is deliberately kept (no
+ * --user-data-dir), so saved projects are the same whether you open the app
+ * window or browse to the address manually.
+ */
+function chromiumCandidates() {
+  const { ProgramFiles, LOCALAPPDATA } = process.env
+  const pf86 = process.env['ProgramFiles(x86)']
+  if (process.platform === 'win32') {
+    return [
+      `${LOCALAPPDATA}\\Google\\Chrome\\Application\\chrome.exe`,
+      `${ProgramFiles}\\Google\\Chrome\\Application\\chrome.exe`,
+      `${pf86}\\Google\\Chrome\\Application\\chrome.exe`,
+      `${ProgramFiles}\\Microsoft\\Edge\\Application\\msedge.exe`,
+      `${pf86}\\Microsoft\\Edge\\Application\\msedge.exe`,
+      `${LOCALAPPDATA}\\Chromium\\Application\\chrome.exe`
+    ].filter(Boolean)
+  }
+  if (process.platform === 'darwin') {
+    return [
+      '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+      '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+      '/Applications/Chromium.app/Contents/MacOS/Chromium'
+    ]
+  }
+  return ['/usr/bin/google-chrome', '/usr/bin/microsoft-edge', '/usr/bin/chromium', '/usr/bin/chromium-browser']
+}
+
 function open(url) {
+  // Allow opting out: CLYP_APP_MODE=0 falls back to a normal browser tab.
+  if (process.env.CLYP_APP_MODE !== '0') {
+    for (const exe of chromiumCandidates()) {
+      if (!fs.existsSync(exe)) continue
+      try {
+        spawn(exe, [`--app=${url}`, '--window-size=1440,900'], {
+          detached: true,
+          stdio: 'ignore'
+        }).unref()
+        console.log('  Opened in app mode.\n')
+        return
+      } catch {
+        /* try the next candidate */
+      }
+    }
+  }
   const cmd =
     process.platform === 'win32' ? ['cmd', ['/c', 'start', '', url]]
     : process.platform === 'darwin' ? ['open', [url]]

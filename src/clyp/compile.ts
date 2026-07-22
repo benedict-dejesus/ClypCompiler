@@ -14,7 +14,8 @@ import { catalogEntry } from './catalog'
 import { indent } from './util'
 
 export interface CompiledBlock {
-  identity: RuntimeIdentity
+  /** Absent for pre-compiled blocks pasted from Clyp. */
+  identity?: RuntimeIdentity
   /** Block HTML fragment (scoped root wrapper included), no style/script. */
   html: string
   /** Block-scoped CSS rules (no <style> wrapper). */

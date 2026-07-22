@@ -14,37 +14,54 @@ export function BlockPanel({ lessonId, blockId }: { lessonId: string; blockId: s
   const [showPreview, setShowPreview] = useState(false)
 
   const block = course?.blocks[blockId]
+  const pasted = block?.pasted
 
-  const compiled = useMemo(() => (block ? compileBlock(block.clyp) : null), [block?.clyp])
-
-  const slots = useMemo(
-    () => (compiled?.output ? detectAssetSlots(compiled.output.html) : []),
-    [compiled]
+  // .clyp blocks are recompiled here; pasted blocks arrive already compiled.
+  const compiled = useMemo(
+    () => (block?.clyp ? compileBlock(block.clyp) : null),
+    [block?.clyp]
   )
+  const parts = useMemo(() => {
+    if (pasted) return { html: pasted.html, css: pasted.css, js: pasted.js }
+    if (compiled?.output) {
+      return { html: compiled.output.html, css: compiled.output.css, js: compiled.output.js }
+    }
+    return null
+  }, [pasted, compiled])
+
+  const slots = useMemo(() => (parts ? detectAssetSlots(parts.html) : []), [parts])
 
   const previewDoc = useMemo(() => {
-    if (!showPreview || !compiled?.output || !course || !block) return ''
-    const html = applyAssetOverrides(
-      compiled.output.html,
-      block.assetOverrides,
-      course.assets,
-      (a) => a.dataUrl
-    )
-    return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>body{margin:0;padding:16px;background:#fff;font-family:'Segoe UI',system-ui,sans-serif;}${compiled.output.css}</style></head><body>${html}<script>${compiled.output.js}<\/script></body></html>`
-  }, [showPreview, compiled, block, course])
+    if (!showPreview || !parts || !course || !block) return ''
+    const html = applyAssetOverrides(parts.html, block.assetOverrides, course.assets, (a) => a.dataUrl)
+    return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>body{margin:0;padding:16px;background:#fff;font-family:'Segoe UI',system-ui,sans-serif;}${parts.css}</style></head><body>${html}<script>${parts.js}<\/script></body></html>`
+  }, [showPreview, parts, block, course])
 
   if (!course || !block) return <div className="panel"><p>This block no longer exists.</p></div>
-  const entry = catalogEntry(block.clyp.block.blockType)
-  const gated = compiled?.output ? /class="clyp-gate\b/.test(compiled.output.html) : false
+  const entry = block.clyp ? catalogEntry(block.clyp.block.blockType) : null
+  const gated = parts ? /class="clyp-gate\b/.test(parts.html) : false
   const issues = compiled?.validation.issues ?? []
 
   return (
     <div className="panel">
       <h2>{block.title}</h2>
       <p className="panel-sub">
-        {entry.label} · {entry.family} block · from <code>{block.sourceFileName}</code>
+        {entry ? `${entry.label} · ${entry.family} block` : `${pasted?.blockLabel ?? 'Pasted block'} · pasted clypped code`}
+        {' · from '}<code>{block.sourceFileName}</code>
         {gated ? ' · has completion gate' : ' · completes on view'}
       </p>
+
+      {pasted && (
+        <section className="card card-info">
+          <h3>Pre-compiled block</h3>
+          <p className="hint" style={{ margin: 0 }}>
+            This block was pasted as clypped code, so it is embedded exactly as Clyp generated it.
+            Completion gating, XP and image replacement below all still apply. It cannot be
+            re-validated or re-rendered with photoreal character art — import the original{' '}
+            <code>.clyp</code> file instead if you need that.
+          </p>
+        </section>
+      )}
 
       <section className="card">
         <h3>Block settings</h3>
@@ -162,7 +179,7 @@ export function BlockPanel({ lessonId, blockId }: { lessonId: string; blockId: s
         <button className="btn btn-secondary" onClick={() => setShowPreview((v) => !v)}>
           {showPreview ? 'Hide block preview' : 'Preview this block'}
         </button>
-        {showPreview && compiled?.output && (
+        {showPreview && parts && (
           <iframe className="block-preview" title="Block preview" srcDoc={previewDoc} sandbox="allow-scripts" />
         )}
       </section>

@@ -26,7 +26,10 @@ Sample `.clyp` blocks are included under `public/samples/` for trying the app.
 
 ## Features
 
-- **Course & Lesson Builder** — organize imported `.clyp` blocks into lessons; reorder lessons and blocks; move blocks between lessons.
+- **Two ways to bring blocks in.**
+  - **Import `.clyp` files** — the source object model. ClypCompiler recompiles these on every export, so they can be re-validated and re-rendered with photoreal character art.
+  - **Paste clypped code** — press <b>Clyp</b> in Clyp to copy a block, then paste it straight into a lesson. The block is already compiled, so it is embedded exactly as generated. It still takes part in lesson flow, completion gating, XP and image replacement, but it cannot be re-validated or re-rendered with different art. The dialog shows a live preview, the detected block type and a size breakdown before you commit.
+- **Course & Lesson Builder** — organize blocks into lessons; reorder lessons and blocks; move blocks between lessons.
   - **Gamification** — XP per block (with per-block overrides), lesson bonuses, levels, automatic lesson/course badges plus custom badges (XP-threshold, lesson or course triggered), live XP bar and toasts in the player.
   - **Gatekeeping** — linear or free lesson navigation, lock icons, per-block completion rules (interactive blocks complete via their built-in completion gate; reading blocks complete on view), optional completion screen.
   - **Themes** — six course-wide themes, overridable per lesson.
@@ -45,7 +48,7 @@ Sample `.clyp` blocks are included under `public/samples/` for trying the app.
 ## Workflow
 
 1. **Create a course** on the start screen (recent projects are stored locally).
-2. **Import `.clyp` files** into lessons via the structure tree ("+ Import .clyp blocks").
+2. Add blocks to a lesson from the structure tree — **+ Import .clyp** for source files, or **📋 Paste code** for clypped code copied out of Clyp.
 3. Configure **course settings** (details, theme, art style, gamification, gatekeeping), **lessons** (title, description, theme override, badge icon) and **blocks** (title, XP override, image/SVG replacement, per-block preview).
 4. For scenarios and conversations, open **Scenario photography**: download the image brief, generate the images, drop them back in. Coverage updates as they match.
 5. **Preview** the course player, then **Export** as SCORM 1.2 or HTML5.
@@ -56,6 +59,8 @@ Sample `.clyp` blocks are included under `public/samples/` for trying the app.
 `npm run install:desktop` creates **ClypCompiler.lnk** on your desktop and in the Start Menu, with a generated multi-resolution icon (`build/clypcompiler.ico`).
 
 The launcher (`Launch ClypCompiler.bat`) serves the built app from `http://127.0.0.1:4780` via `scripts/serve.mjs` — a dependency-free static server. Serving over a real origin (rather than opening the file from disk) is what gives the app full IndexedDB storage for autosave and the recent-projects list.
+
+It opens in **app mode**: a standalone Chrome/Edge window with no tabs, address bar or bookmarks, so ClypCompiler looks like a desktop application. The launcher finds Chrome, Edge or Chromium automatically and falls back to a normal browser tab if none is installed. The default browser profile is kept deliberately, so your saved projects are the same whether you use the app window or browse to the address manually. Set `CLYP_APP_MODE=0` to force a normal tab.
 
 If Node.js isn't installed, the launcher falls back to the single-file `ClypCompiler.html` build, which runs straight from disk. That mode still works fully, but browsers restrict storage on `file://` origins, so ClypCompiler falls back to `localStorage` there — keep large courses as `.clypcourse` files.
 

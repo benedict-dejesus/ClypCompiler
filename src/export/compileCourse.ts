@@ -3,6 +3,7 @@
 // course, applies Assets Library overrides, and aggregates validation results.
 // Nothing partial ever reaches an export: any Critical/Error halts packaging.
 import type { Course, CourseBlock, Lesson, AssetItem } from '../model/course'
+import { isPastedBlock } from '../model/course'
 import { compileBlock, type CompiledBlock } from '../clyp/compile'
 import type { ValidationIssue } from '../clyp/types'
 import { applyAssetOverrides } from './assetSlots'
@@ -52,6 +53,36 @@ export function compileCourse(
     for (const blockId of lesson.blockIds) {
       const block = course.blocks[blockId]
       if (!block) continue
+
+      // Pasted clypped code is already compiled by Clyp — embed it directly.
+      // Asset overrides still apply (they operate on the HTML), and the gate
+      // marker is still detected, so it takes part in completion and XP.
+      if (isPastedBlock(block)) {
+        const html = applyAssetOverrides(
+          block.pasted.html,
+          block.assetOverrides,
+          course.assets,
+          resolveSrc
+        )
+        const gated = /class="clyp-gate\b/.test(block.pasted.html)
+        compiledBlocks.push({
+          block,
+          compiled: {
+            html,
+            css: block.pasted.css,
+            js: block.pasted.js,
+            logicNotes: ['Pre-compiled block pasted from Clyp; embedded exactly as generated.'],
+            blockLabel: block.pasted.blockLabel
+          },
+          gated,
+          xp:
+            block.xpOverride ??
+            (gated ? course.gamification.xpPerGatedBlock : course.gamification.xpPerBlock)
+        })
+        continue
+      }
+
+      if (!block.clyp) continue
       const result = compileBlock(block.clyp)
       const blocking = result.validation.issues.filter(
         (i) => i.severity === 'critical' || i.severity === 'error'
