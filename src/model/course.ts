@@ -211,6 +211,13 @@ export interface CourseMeta {
   version: string
 }
 
+/**
+ * 'rendered' — scenario/conversation characters and scene backgrounds are
+ * automatically replaced with high-end raster renditions from the built-in
+ * art engine. 'illustrated' — keep Clyp's original inline SVG art.
+ */
+export type ArtStyle = 'rendered' | 'illustrated'
+
 export interface Course {
   uuid: string
   schemaVersion: string
@@ -218,6 +225,7 @@ export interface Course {
   modifiedDate: string
   meta: CourseMeta
   themeId: string
+  artStyle?: ArtStyle
   lessons: Lesson[]
   blocks: Record<string, CourseBlock>
   assets: AssetItem[]
@@ -241,6 +249,7 @@ export function newCourse(title: string): Course {
       version: '1.0'
     },
     themeId: 'clyp',
+    artStyle: 'rendered',
     lessons: [newLesson('Lesson 1')],
     blocks: {},
     assets: [],

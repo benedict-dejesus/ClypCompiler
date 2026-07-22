@@ -402,6 +402,8 @@ ${s} .clyp-scenario { border: 1px solid #c7d8db; border-radius: 12px; overflow: 
 ${s} .clyp-sc-scene { position: relative; }
 ${s} .clyp-sc-bg { line-height: 0; }
 ${s} .clyp-sc-bg svg { width: 100%; height: 160px; display: block; }
+${s} .clyp-sc-bg img.clyp-art { width: 100%; height: 160px; display: block; object-fit: cover; }
+${s} .clyp-sc-character img.clyp-art { width: 100%; height: auto; display: block; }
 ${s} .clyp-sc-cast { display: flex; justify-content: center; gap: 16px; margin-top: -74px; position: relative; }
 ${s} .clyp-sc-character { margin: 0; width: 96px; text-align: center; opacity: 0.65; transition: opacity 0.2s, transform 0.2s; }
 ${s} .clyp-sc-character svg { width: 100%; height: auto; }
@@ -425,14 +427,14 @@ ${s} .clyp-sc-ending-summary { color: #3d5f6a; }
 
 /* ---- Tablet & desktop (111_BREAKPOINT_STANDARD) ---- */
 @media (min-width: 768px) {
-  ${s} .clyp-sc-bg svg { height: 220px; }
+  ${s} .clyp-sc-bg svg, ${s} .clyp-sc-bg img.clyp-art { height: 220px; }
   ${s} .clyp-sc-cast { gap: 32px; margin-top: -96px; }
   ${s} .clyp-sc-character { width: 120px; }
   ${s} .clyp-sc-panel { padding: 20px 28px 24px; }
   ${s} .clyp-sc-controls { flex-direction: column; }
 }
 @media (min-width: 1024px) {
-  ${s} .clyp-sc-bg svg { height: 260px; }
+  ${s} .clyp-sc-bg svg, ${s} .clyp-sc-bg img.clyp-art { height: 260px; }
   ${s} .clyp-sc-character { width: 136px; }
 }`
 }

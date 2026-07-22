@@ -8,6 +8,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:offline": "vite build --config vite.config.offline.ts && node scripts/bundle-offline.mjs",
+    "install:desktop": "npm run build:offline && powershell -ExecutionPolicy Bypass -File scripts/install-shortcut.ps1",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit"
   },

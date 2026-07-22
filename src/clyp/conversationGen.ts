@@ -58,7 +58,7 @@ function buildModel(block: BlockSection, identity: RuntimeIdentity): RtModel {
   const cast: Record<string, RtCast> = {}
   const registerCast = (c: ClypObject): void => {
     const name = characterDisplayName(block, c.id)
-    cast[c.id] = { name, avatar: characterSvg(characterSpecOf(c), 'neutral', 'neutral'), initial: name.charAt(0).toUpperCase(), address: emailFor(name) }
+    cast[c.id] = { name, avatar: characterSvg(characterSpecOf(c), 'neutral', 'neutral', 'avatar'), initial: name.charAt(0).toUpperCase(), address: emailFor(name) }
   }
   root.children.map((id) => block.objects[id]).filter((o) => o?.type === 'character').forEach(registerCast)
 
@@ -363,6 +363,7 @@ ${s} .clyp-cv-frame { border: 1px solid #c7d8db; border-radius: 16px; overflow: 
 ${s} .clyp-cv-topbar { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: #015061; color: #fff; }
 ${s} .clyp-cv-tb-avatar { width: 34px; height: 34px; border-radius: 50%; overflow: hidden; background: #dceae8; display: inline-flex; align-items: flex-end; justify-content: center; flex: none; color: #013d4a; font-weight: 700; }
 ${s} .clyp-cv-tb-avatar svg { width: 34px; height: 38px; }
+${s} .clyp-cv-tb-avatar img.clyp-art, ${s} .clyp-cv-avatar img.clyp-art { width: 100%; height: 100%; object-fit: cover; display: block; }
 ${s} .clyp-cv-tb-col { display: flex; flex-direction: column; line-height: 1.25; }
 ${s} .clyp-cv-tb-name { font-weight: 700; }
 ${s} .clyp-cv-tb-sub, ${s} .clyp-cv-tb-subject { font-size: 0.78em; opacity: 0.85; }

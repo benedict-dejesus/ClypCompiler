@@ -7,6 +7,22 @@ import type { Course, AssetItem } from '../model/course'
 import { compileCourse, type CourseCompileResult } from './compileCourse'
 import { buildCourseHtml } from './runtime'
 import { buildScormManifest } from './scorm'
+import { setArtResolver } from '../clyp/assets'
+import { prepareCourseArt, artResolverFor, type PreparedArt, type ArtAsset } from '../art/artEngine'
+
+/**
+ * Renders every character/background variant the course uses (art style
+ * 'rendered'), or returns null to keep Clyp's original inline SVG art.
+ * Failures degrade gracefully to SVG — an export never breaks over art.
+ */
+async function prepareArtIfEnabled(course: Course): Promise<PreparedArt | null> {
+  if ((course.artStyle ?? 'rendered') !== 'rendered') return null
+  try {
+    return await prepareCourseArt(course)
+  } catch {
+    return null
+  }
+}
 
 export type ExportKind = 'scorm' | 'html5'
 
@@ -71,7 +87,14 @@ function usedAssetIds(course: Course): Set<string> {
 
 export async function exportCourseZip(course: Course, kind: ExportKind): Promise<ExportResult> {
   const paths = assetPathMap(course)
-  const compiled = compileCourse(course, (a) => paths.get(a.id) ?? '')
+  const art = await prepareArtIfEnabled(course)
+  if (art) setArtResolver(artResolverFor(art, (a: ArtAsset) => a.fileName))
+  let compiled
+  try {
+    compiled = compileCourse(course, (a) => paths.get(a.id) ?? '')
+  } finally {
+    setArtResolver(null)
+  }
   if (!compiled.ok) {
     return { ok: false, problems: compiled.problems }
   }
@@ -88,6 +111,14 @@ export async function exportCourseZip(course: Course, kind: ExportKind): Promise
     if (!path) continue
     zip.file(path, dataUrlBytes(asset.dataUrl))
     packagedPaths.push(path)
+  }
+  if (art) {
+    // Only art actually referenced by the compiled HTML gets packaged.
+    for (const a of art.assets.values()) {
+      if (!html.includes(a.fileName)) continue
+      zip.file(a.fileName, dataUrlBytes(a.dataUrl))
+      packagedPaths.push(a.fileName)
+    }
   }
 
   if (kind === 'scorm') {
@@ -108,8 +139,15 @@ export async function exportCourseZip(course: Course, kind: ExportKind): Promise
 }
 
 /** Compiles the course for the in-app player preview (assets stay data: URLs). */
-export function buildPreviewHtml(course: Course): { ok: boolean; html?: string; problems?: CourseCompileResult['problems'] } {
-  const compiled = compileCourse(course, (a) => a.dataUrl)
+export async function buildPreviewHtml(course: Course): Promise<{ ok: boolean; html?: string; problems?: CourseCompileResult['problems'] }> {
+  const art = await prepareArtIfEnabled(course)
+  if (art) setArtResolver(artResolverFor(art, (a: ArtAsset) => a.dataUrl))
+  let compiled
+  try {
+    compiled = compileCourse(course, (a) => a.dataUrl)
+  } finally {
+    setArtResolver(null)
+  }
   if (!compiled.ok) return { ok: false, problems: compiled.problems }
   return { ok: true, html: buildCourseHtml(course, compiled.lessons) }
 }

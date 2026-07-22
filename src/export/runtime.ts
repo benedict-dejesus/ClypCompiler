@@ -198,26 +198,75 @@ button { font-family: inherit; }
 /* ---- Main / lessons ---- */
 .cc-main { flex: 1 1 auto; min-width: 0; display: flex; justify-content: center; padding: 20px 14px 60px; }
 .cc-lesson, .cc-completion { width: 100%; max-width: 860px; }
+.cc-lesson { animation: cc-lesson-in 420ms cubic-bezier(0.16,1,0.3,1) both; }
+@keyframes cc-lesson-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 .cc-lesson-head { margin-bottom: 18px; }
 .cc-lesson-kicker { margin: 0 0 2px; text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.7rem; font-weight: 700; color: var(--cc-muted); }
 .cc-lesson-head h1 { margin: 0 0 6px; font-size: 1.6rem; color: var(--cc-text); }
 .cc-lesson-desc { margin: 0; color: var(--cc-muted); }
-.cc-blockwrap { background: var(--cc-surface); border-radius: 14px; box-shadow: 0 1px 4px rgba(15,40,50,0.08); padding: 18px; margin-bottom: 18px; }
-.cc-blockwrap img.clyp-asset-replaced { border-radius: 8px; }
+.cc-blockwrap {
+  background: var(--cc-surface); border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(15,40,50,0.05), 0 4px 14px rgba(15,40,50,0.07);
+  padding: 20px; margin-bottom: 20px;
+  border: 1px solid rgba(15,40,50,0.05);
+  transition: box-shadow 320ms cubic-bezier(0.22,0.61,0.36,1), transform 320ms cubic-bezier(0.22,0.61,0.36,1),
+              opacity 320ms cubic-bezier(0.22,0.61,0.36,1);
+}
+/* Blocks fade up as they scroll in. This is scoped to .cc-js — a class the
+   runtime sets the moment it parses — so if scripting is unavailable or the
+   runtime fails, every block simply renders visible. */
+.cc-js .cc-blockwrap { opacity: 0; transform: translateY(14px); }
+.cc-js .cc-blockwrap.is-revealed { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .cc-js .cc-blockwrap { opacity: 1; transform: none; }
+}
+.cc-blockwrap:hover { box-shadow: 0 2px 4px rgba(15,40,50,0.06), 0 10px 26px rgba(15,40,50,0.10); }
+/* A completed block gets a subtle mint edge so progress is visible at a glance. */
+.cc-blockwrap.is-done { border-color: color-mix(in srgb, var(--cc-accent) 45%, transparent); }
+.cc-blockwrap img.clyp-asset-replaced { border-radius: 10px; }
+.cc-blockwrap img.clyp-art { border-radius: 10px; }
 .cc-empty-lesson { color: var(--cc-muted); font-style: italic; }
 .cc-lesson-foot { display: flex; justify-content: space-between; gap: 12px; margin-top: 26px; }
-.cc-btn { border: 0; border-radius: 10px; padding: 12px 20px; font-size: 0.92rem; font-weight: 700; cursor: pointer; }
-.cc-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.cc-btn-primary { background: var(--cc-primary); color: #fff; }
-.cc-btn-primary:not(:disabled):hover { background: var(--cc-primary-dark); }
+.cc-btn {
+  border: 0; border-radius: 11px; padding: 12px 22px;
+  font-size: 0.92rem; font-weight: 700; cursor: pointer;
+  transition: transform 140ms cubic-bezier(0.22,0.61,0.36,1), box-shadow 220ms, background-color 220ms, opacity 220ms;
+}
+.cc-btn:not(:disabled):hover { transform: translateY(-2px); }
+.cc-btn:not(:disabled):active { transform: translateY(0) scale(0.985); }
+.cc-btn:disabled { opacity: 0.42; cursor: not-allowed; }
+.cc-btn-primary { background: var(--cc-primary); color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.16); }
+.cc-btn-primary:not(:disabled):hover { background: var(--cc-primary-dark); box-shadow: 0 6px 18px rgba(0,0,0,0.22); }
+/* When the lesson is finished, the next button invites the click. */
+.cc-btn-primary.is-ready { animation: cc-ready 2s ease-in-out infinite; }
+@keyframes cc-ready { 0%,100% { box-shadow: 0 2px 8px rgba(0,0,0,0.16); } 50% { box-shadow: 0 2px 8px rgba(0,0,0,0.16), 0 0 0 8px color-mix(in srgb, var(--cc-accent) 22%, transparent); } }
 .cc-btn-ghost { background: transparent; color: var(--cc-primary); border: 2px solid var(--cc-primary); }
 
 /* ---- Gate hint on locked "next" ---- */
 .cc-gatehint { margin: 10px 0 0; font-size: 0.8rem; color: var(--cc-muted); text-align: right; }
 
 /* ---- Completion screen ---- */
-.cc-completion { text-align: center; padding-top: 30px; }
-.cc-completion .cc-trophy { font-size: 64px; }
+.cc-completion { text-align: center; padding-top: 30px; position: relative; }
+.cc-completion .cc-trophy { font-size: 64px; display: inline-block; animation: cc-trophy-in 900ms cubic-bezier(0.34,1.56,0.64,1) both; }
+@keyframes cc-trophy-in { 0% { opacity: 0; transform: scale(0.3) rotate(-18deg); } 60% { opacity: 1; transform: scale(1.14) rotate(6deg); } 100% { transform: scale(1) rotate(0); } }
+.cc-confetti { position: fixed; inset: 0; pointer-events: none; z-index: 80; overflow: hidden; }
+.cc-confetti i {
+  position: absolute; top: -14px; width: 9px; height: 15px; border-radius: 2px;
+  animation: cc-fall linear forwards;
+}
+@keyframes cc-fall {
+  0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(105vh) rotate(720deg); opacity: 0.9; }
+}
+.cc-stat { animation: cc-stat-in 460ms cubic-bezier(0.16,1,0.3,1) both; }
+.cc-stat:nth-child(2) { animation-delay: 90ms; }
+.cc-stat:nth-child(3) { animation-delay: 180ms; }
+@keyframes cc-stat-in { from { opacity: 0; transform: translateY(14px) scale(0.96); } to { opacity: 1; transform: none; } }
+.cc-badge { animation: cc-badge-in 520ms cubic-bezier(0.34,1.56,0.64,1) both; }
+.cc-badge:nth-child(2) { animation-delay: 110ms; }
+.cc-badge:nth-child(3) { animation-delay: 220ms; }
+.cc-badge:nth-child(n+4) { animation-delay: 320ms; }
+@keyframes cc-badge-in { from { opacity: 0; transform: scale(0.5) translateY(10px); } to { opacity: 1; transform: none; } }
 .cc-completion h1 { font-size: 1.8rem; margin: 10px 0 6px; }
 .cc-completion p { color: var(--cc-muted); }
 .cc-stats { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin: 26px 0; }
@@ -242,6 +291,18 @@ ${allCss.join('\n\n')}
 </style>
 </head>
 <body>
+<script>
+/* Marks the document as script-enabled before first paint, so progressive
+   enhancements (block reveal animation) never hide content when they can't run. */
+document.documentElement.className += ' cc-js';
+/* Failsafe: if the course runtime does not report a successful boot, drop the
+   reveal animation entirely so the learner always sees the content. */
+window.__ccBooted = false;
+setTimeout(function () {
+  if (window.__ccBooted) { return; }
+  document.documentElement.className = document.documentElement.className.replace(' cc-js', '');
+}, 3000);
+</script>
 <div class="cc-app">
   <header class="cc-header">
     <button type="button" class="cc-menu-btn" id="cc-menu" aria-label="Open lesson menu">&#9776;</button>
@@ -460,6 +521,7 @@ window.__CC_CONFIG = ${JSON.stringify(config)};
     renderHud();
     renderNav();
     renderFooters();
+    paintBlockStates();
     saveState();
   }
 
@@ -548,6 +610,11 @@ window.__CC_CONFIG = ${JSON.stringify(config)};
       } else {
         next.disabled = !gatedOk;
       }
+      /* Pulse the button once the lesson requirement is met. */
+      var ready = !next.disabled && isLessonComplete(li);
+      var hasReady = next.className.indexOf('is-ready') !== -1;
+      if (ready && !hasReady) { next.className += ' is-ready'; }
+      else if (!ready && hasReady) { next.className = next.className.replace(' is-ready', ''); }
       var hint = sections[li].querySelector('.cc-gatehint');
       if (!gatedOk && !hint) {
         hint = document.createElement('p');
@@ -614,6 +681,7 @@ window.__CC_CONFIG = ${JSON.stringify(config)};
       }
     }
     window.scrollTo(0, 0);
+    confetti();
     if (scorm.active) {
       scormSet('cmi.core.lesson_status', 'completed');
       scormCommit();
@@ -645,40 +713,91 @@ window.__CC_CONFIG = ${JSON.stringify(config)};
   });
 
   /* Non-gated (static/reading) blocks complete once mostly scrolled into view.
-     In "viewed" completion mode, gated blocks also complete on view. */
-  var observer = null;
+     In "viewed" completion mode, gated blocks also complete on view.
+     Visibility is measured directly from bounding rects on scroll — it needs
+     no IntersectionObserver, so it behaves identically in every browser,
+     LMS iframe and embedded webview. */
   function blockNeedsViewTracking(wrap) {
     var idx = parseInt(wrap.getAttribute('data-cc-block'), 10);
     if (completed[idx]) { return false; }
     var gated = wrap.getAttribute('data-cc-gated') === '1';
     return !gated || cfg.gatekeeping.lessonCompletion === 'viewed';
   }
-  function observeVisibleBlocks() {
-    if (observer) { observer.disconnect(); }
+  function checkViewedBlocks() {
+    var viewport = window.innerHeight || document.documentElement.clientHeight || 800;
     var wraps = document.querySelectorAll('.cc-lesson:not([hidden]) [data-cc-block]');
-    if (!('IntersectionObserver' in window)) {
-      /* Very old browser: count view-tracked blocks as seen on lesson open. */
-      for (var i = 0; i < wraps.length; i++) {
-        if (blockNeedsViewTracking(wraps[i])) {
-          markBlockComplete(parseInt(wraps[i].getAttribute('data-cc-block'), 10), false);
-        }
+    for (var i = 0; i < wraps.length; i++) {
+      var wrap = wraps[i];
+      var r = wrap.getBoundingClientRect();
+      if (r.height === 0) { continue; }
+      /* Reveal animation: any block with its top edge inside the viewport. */
+      if (r.top < viewport * 0.94 && r.bottom > 0) {
+        if (wrap.className.indexOf('is-revealed') === -1) { wrap.className += ' is-revealed'; }
       }
-      return;
-    }
-    observer = new IntersectionObserver(function (entries) {
-      for (var i = 0; i < entries.length; i++) {
-        var en = entries[i];
-        if (!en.isIntersecting) { continue; }
-        var wrap = en.target;
-        if (blockNeedsViewTracking(wrap)) {
-          markBlockComplete(parseInt(wrap.getAttribute('data-cc-block'), 10), true);
-        }
-        observer.unobserve(wrap);
+      if (!blockNeedsViewTracking(wrap)) { continue; }
+      var visibleH = Math.min(r.bottom, viewport) - Math.max(r.top, 0);
+      /* Viewed = most of the block is on screen, or (for blocks taller than
+         the viewport) the block fills most of the screen. */
+      if (visibleH >= r.height * 0.6 || visibleH >= viewport * 0.55) {
+        markBlockComplete(parseInt(wrap.getAttribute('data-cc-block'), 10), true);
       }
-    }, { threshold: 0.45 });
-    for (var w = 0; w < wraps.length; w++) {
-      if (blockNeedsViewTracking(wraps[w])) { observer.observe(wraps[w]); }
     }
+  }
+
+  /** Marks completed blocks with an accent edge. */
+  function paintBlockStates() {
+    var wraps = document.querySelectorAll('[data-cc-block]');
+    for (var i = 0; i < wraps.length; i++) {
+      var idx = parseInt(wraps[i].getAttribute('data-cc-block'), 10);
+      var has = wraps[i].className.indexOf('is-done') !== -1;
+      if (completed[idx] && !has) { wraps[i].className += ' is-done'; }
+    }
+  }
+
+  /** Celebratory confetti burst — decorative, skipped when motion is reduced. */
+  function confetti() {
+    try {
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { return; }
+      var host = document.createElement('div');
+      host.className = 'cc-confetti';
+      var colors = ['#00c18e', '#ffd166', '#4f6df5', '#ef6f6c', '#7ce8c8', '#ffffff'];
+      for (var i = 0; i < 70; i++) {
+        var p = document.createElement('i');
+        p.style.left = Math.random() * 100 + 'vw';
+        p.style.background = colors[i % colors.length];
+        p.style.animationDuration = (2.4 + Math.random() * 1.9) + 's';
+        p.style.animationDelay = (Math.random() * 0.5) + 's';
+        p.style.opacity = String(0.7 + Math.random() * 0.3);
+        host.appendChild(p);
+      }
+      document.body.appendChild(host);
+      window.setTimeout(function () {
+        if (host.parentNode) { host.parentNode.removeChild(host); }
+      }, 5200);
+    } catch (e) { /* never let decoration break the course */ }
+  }
+  var viewCheckQueued = false;
+  function queueViewCheck() {
+    /* Check right away (cheap: a handful of rects), and once more shortly
+       after, so both the start and the end of a scroll are covered. */
+    checkViewedBlocks();
+    if (viewCheckQueued) { return; }
+    viewCheckQueued = true;
+    window.setTimeout(function () {
+      viewCheckQueued = false;
+      checkViewedBlocks();
+    }, 250);
+  }
+  window.addEventListener('scroll', queueViewCheck, { passive: true });
+  window.addEventListener('resize', queueViewCheck);
+  /* Safety net: also poll gently, so short lessons that fit fully on screen
+     (no scrolling at all) still register as read. */
+  window.setInterval(checkViewedBlocks, 1200);
+  function observeVisibleBlocks() {
+    /* Reveal the blocks already on screen straight away, then let the scroll
+       handler take over for the rest. */
+    window.setTimeout(checkViewedBlocks, 60);
+    window.setTimeout(checkViewedBlocks, 400);
   }
 
   /* ---------------- navigation buttons ---------------- */
@@ -701,6 +820,7 @@ window.__CC_CONFIG = ${JSON.stringify(config)};
   loadState();
   recomputeProgress(false);
   showLesson(current);
+  window.__ccBooted = true;
   window.addEventListener('beforeunload', function () {
     saveState();
     scormFinish();

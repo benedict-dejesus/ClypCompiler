@@ -1,7 +1,58 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../store/store'
+import { builtinGallery, type GalleryEntry } from '../art/artEngine'
 
 const MAX_ASSET_BYTES = 4 * 1024 * 1024 // keep single-file projects manageable
+
+/** One tile of the built-in art gallery — renders its image lazily. */
+function GalleryTile({ entry }: { entry: GalleryEntry }) {
+  const addAsset = useStore((s) => s.addAsset)
+  const notify = useStore((s) => s.notify)
+  const [url, setUrl] = useState<string | null>(null)
+  const [failed, setFailed] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    entry
+      .make()
+      .then((u) => {
+        if (!cancelled) setUrl(u)
+      })
+      .catch(() => {
+        if (!cancelled) setFailed(true)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [entry])
+
+  const ext = entry.mime === 'image/png' ? 'png' : 'jpg'
+  return (
+    <figure className={`asset-card builtin-card ${entry.kind === 'character' ? 'is-character' : ''}`}>
+      {url ? (
+        <img src={url} alt={entry.label} loading="lazy" />
+      ) : (
+        <div className="asset-loading">{failed ? '⚠' : <span className="spinner spinner-sm" />}</div>
+      )}
+      <figcaption>
+        <span className="asset-name" title={entry.label}>{entry.label}</span>
+        <span className="asset-meta">{entry.kind === 'character' ? 'character · png' : 'scene · jpg'}</span>
+      </figcaption>
+      {url && (
+        <button
+          className="asset-add"
+          title="Add a copy to this course's assets (for manual slot replacement)"
+          onClick={() => {
+            addAsset(`${entry.label}.${ext}`, entry.mime, url)
+            notify('success', `${entry.label} added to course assets.`)
+          }}
+        >
+          +
+        </button>
+      )}
+    </figure>
+  )
+}
 
 export function AssetsPanel() {
   const course = useStore((s) => s.course)
@@ -10,6 +61,9 @@ export function AssetsPanel() {
   const notify = useStore((s) => s.notify)
   const fileRef = useRef<HTMLInputElement>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [galleryTab, setGalleryTab] = useState<'characters' | 'scenes' | null>(null)
+  const [dragging, setDragging] = useState(false)
+  const gallery = builtinGallery()
   if (!course) return null
 
   const usedBy = (assetId: string): number =>
@@ -43,10 +97,19 @@ export function AssetsPanel() {
       </p>
 
       <section
-        className="card dropzone"
-        onDragOver={(e) => e.preventDefault()}
+        className={`card dropzone ${dragging ? 'is-dragging' : ''}`}
+        onDragOver={(e) => {
+          e.preventDefault()
+          if (!dragging) setDragging(true)
+        }}
+        onDragLeave={(e) => {
+          // Only clear when the pointer actually leaves the dropzone, not when
+          // it crosses onto a child element.
+          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false)
+        }}
         onDrop={(e) => {
           e.preventDefault()
+          setDragging(false)
           if (e.dataTransfer.files.length) onFiles(e.dataTransfer.files)
         }}
       >
@@ -66,6 +129,39 @@ export function AssetsPanel() {
             e.target.value = ''
           }}
         />
+      </section>
+
+      <section className="card">
+        <h3>Built-in art library</h3>
+        <p className="hint">
+          High-end renditions of Clyp's characters and scene backgrounds. Courses using the{' '}
+          <b>Rendered</b> art style get these applied automatically — including every expression,
+          gesture, age and skin-tone variant your scenarios use. Browse the library here, or add a
+          copy to the course assets to place one manually in any block.
+        </p>
+        <div className="check-row">
+          <button
+            className={`btn ${galleryTab === 'characters' ? 'btn-secondary' : 'btn-ghost'}`}
+            onClick={() => setGalleryTab(galleryTab === 'characters' ? null : 'characters')}
+          >
+            👤 Characters ({gallery.filter((g) => g.kind === 'character').length})
+          </button>
+          <button
+            className={`btn ${galleryTab === 'scenes' ? 'btn-secondary' : 'btn-ghost'}`}
+            onClick={() => setGalleryTab(galleryTab === 'scenes' ? null : 'scenes')}
+          >
+            🏙 Scenes ({gallery.filter((g) => g.kind === 'background').length})
+          </button>
+        </div>
+        {galleryTab && (
+          <div className="asset-grid builtin-grid">
+            {gallery
+              .filter((g) => (galleryTab === 'characters' ? g.kind === 'character' : g.kind === 'background'))
+              .map((g) => (
+                <GalleryTile key={g.id} entry={g} />
+              ))}
+          </div>
+        )}
       </section>
 
       {course.assets.length > 0 && (

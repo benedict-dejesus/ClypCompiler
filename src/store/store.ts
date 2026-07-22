@@ -2,14 +2,14 @@
 // truth; every mutation stamps modifiedDate and autosaves to IndexedDB so
 // work survives a refresh (important for the offline/GitHub Pages use case).
 import { create } from 'zustand'
-import { get as idbGet, set as idbSet, del as idbDel, keys as idbKeys } from 'idb-keyval'
+import { storageGet, storageSet, storageDel, storageKeys, STORAGE_PREFIX } from './storage'
 import type { Course, Lesson, CourseBlock, AssetItem, AssetOverride } from '../model/course'
 import { newCourse, newLesson, COURSE_SCHEMA_VERSION } from '../model/course'
 import { parseClypFile } from '../clyp/compile'
 import { validate } from '../clyp/validator'
 import type { ValidationIssue } from '../clyp/types'
 
-const IDB_PREFIX = 'clypcourse:'
+const IDB_PREFIX = STORAGE_PREFIX
 
 export interface ProjectSummary {
   uuid: string
@@ -75,12 +75,13 @@ interface AppState {
 
 let noticeSeq = 1
 
-async function persist(course: Course): Promise<void> {
-  try {
-    await idbSet(IDB_PREFIX + course.uuid, JSON.stringify(course))
-  } catch {
-    // Quota or private-mode failure: the in-memory copy still works; the user
-    // can save the project to a file instead.
+let warnedAboutPersistence = false
+
+async function persist(course: Course, onQuotaProblem?: () => void): Promise<void> {
+  const ok = await storageSet(IDB_PREFIX + course.uuid, JSON.stringify(course))
+  if (!ok && !warnedAboutPersistence) {
+    warnedAboutPersistence = true
+    onQuotaProblem?.()
   }
 }
 
@@ -94,27 +95,21 @@ export const useStore = create<AppState>((set, get) => ({
 
   refreshProjects: async () => {
     const out: ProjectSummary[] = []
-    try {
-      const allKeys = (await idbKeys()) as string[]
-      for (const k of allKeys) {
-        if (typeof k !== 'string' || !k.startsWith(IDB_PREFIX)) continue
-        const raw = (await idbGet(k)) as string | undefined
-        if (!raw) continue
-        try {
-          const c = JSON.parse(raw) as Course
-          out.push({
-            uuid: c.uuid,
-            title: c.meta.title,
-            modifiedDate: c.modifiedDate,
-            lessonCount: c.lessons.length,
-            blockCount: Object.keys(c.blocks).length
-          })
-        } catch {
-          /* skip unreadable entries */
-        }
+    for (const k of await storageKeys()) {
+      const raw = await storageGet(k)
+      if (!raw) continue
+      try {
+        const c = JSON.parse(raw) as Course
+        out.push({
+          uuid: c.uuid,
+          title: c.meta.title,
+          modifiedDate: c.modifiedDate,
+          lessonCount: c.lessons.length,
+          blockCount: Object.keys(c.blocks).length
+        })
+      } catch {
+        /* skip unreadable entries */
       }
-    } catch {
-      /* IndexedDB unavailable (rare); the start screen just shows no projects */
     }
     out.sort((a, b) => b.modifiedDate.localeCompare(a.modifiedDate))
     set({ projects: out })
@@ -127,7 +122,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   openCourse: async (uuid) => {
-    const raw = (await idbGet(IDB_PREFIX + uuid)) as string | undefined
+    const raw = await storageGet(IDB_PREFIX + uuid)
     if (!raw) {
       get().notify('error', 'That project could not be loaded from local storage.')
       return
@@ -161,7 +156,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   deleteProject: async (uuid) => {
-    await idbDel(IDB_PREFIX + uuid)
+    await storageDel(IDB_PREFIX + uuid)
     await get().refreshProjects()
   },
 
@@ -182,7 +177,12 @@ export const useStore = create<AppState>((set, get) => ({
     fn(next)
     next.modifiedDate = new Date().toISOString()
     set({ course: next, dirty: true })
-    void persist(next)
+    void persist(next, () =>
+      get().notify(
+        'error',
+        'This course is too large to autosave in browser storage. Use "Save project" to keep a .clypcourse file — your work is safe in this session.'
+      )
+    )
   },
 
   addLesson: () => {

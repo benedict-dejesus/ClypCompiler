@@ -1,12 +1,19 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useStore } from '../store/store'
 import { buildPreviewHtml } from '../export/zip'
+import type { CourseCompileResult } from '../export/compileCourse'
 
 type Device = 'mobile' | 'tablet' | 'desktop'
 const DEVICE_WIDTHS: Record<Device, string> = {
   mobile: '375px',
   tablet: '768px',
   desktop: '100%'
+}
+
+interface BuildState {
+  status: 'building' | 'ready' | 'failed'
+  html?: string
+  problems?: CourseCompileResult['problems']
 }
 
 /**
@@ -19,8 +26,21 @@ export function PlayerScreen() {
   const setView = useStore((s) => s.setView)
   const [device, setDevice] = useState<Device>('desktop')
   const [runId, setRunId] = useState(0)
+  const [build, setBuild] = useState<BuildState>({ status: 'building' })
 
-  const result = useMemo(() => (course ? buildPreviewHtml(course) : null), [course, runId])
+  useEffect(() => {
+    let cancelled = false
+    if (!course) return
+    setBuild({ status: 'building' })
+    void buildPreviewHtml(course).then((result) => {
+      if (cancelled) return
+      if (result.ok) setBuild({ status: 'ready', html: result.html })
+      else setBuild({ status: 'failed', problems: result.problems })
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [course, runId])
 
   if (!course) return null
 
@@ -50,21 +70,28 @@ export function PlayerScreen() {
         </div>
       </header>
       <div className="player-stage">
-        {result?.ok ? (
+        {build.status === 'building' && (
+          <div className="player-loading">
+            <div className="spinner" />
+            <p>Compiling course &amp; rendering art…</p>
+          </div>
+        )}
+        {build.status === 'ready' && (
           <iframe
             key={runId}
             className="player-frame"
             style={{ width: DEVICE_WIDTHS[device] }}
             title="Course player"
-            srcDoc={result.html}
+            srcDoc={build.html}
             sandbox="allow-scripts"
           />
-        ) : (
+        )}
+        {build.status === 'failed' && (
           <div className="panel">
             <h2>The course cannot be played yet</h2>
             <p>Compilation was blocked by validation errors. Return to the builder and check the affected blocks:</p>
             <ul className="issue-list">
-              {result?.problems?.map((p, i) => (
+              {build.problems?.map((p, i) => (
                 <li key={i}>
                   <b>{p.blockTitle}</b> in {p.lessonTitle}: {p.issues[0]?.description}
                 </li>

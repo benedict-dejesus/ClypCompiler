@@ -9,6 +9,27 @@
 // explicit. Gradient/filter IDs are namespaced per spec so many inline SVGs
 // can share one host document without collisions.
 
+// ---------------------------------------------------------------------------
+// ClypCompiler extension — Art Resolver hook.
+// When a resolver is installed (built-in "Rendered" art style), character and
+// background requests can return a raster image URL instead of inline SVG.
+// A null return falls through to the original SVG path, so the reference
+// behavior is untouched when no resolver is active.
+// ---------------------------------------------------------------------------
+export interface ArtResolver {
+  character?: (
+    spec: CharacterSpec,
+    expression: string,
+    gesture: string,
+    variant: 'figure' | 'avatar'
+  ) => string | null
+  background?: (backgroundId: string | undefined) => string | null
+}
+let artResolver: ArtResolver | null = null
+export function setArtResolver(resolver: ArtResolver | null): void {
+  artResolver = resolver
+}
+
 export const EXPRESSIONS = ['neutral', 'happy', 'concerned', 'confused', 'angry', 'disappointed', 'confident', 'encouraging'] as const
 export const GESTURES = ['neutral', 'pointing', 'explaining', 'listening', 'questioning', 'greeting', 'approving', 'rejecting'] as const
 
@@ -436,7 +457,16 @@ function armsFor(gesture: string, sleeve: string, tone: Tone): string {
 }
 
 /** Renders a character bust as inline SVG for the given spec/expression/gesture. */
-export function characterSvg(spec: CharacterSpec, expression: string, gesture: string): string {
+export function characterSvg(
+  spec: CharacterSpec,
+  expression: string,
+  gesture: string,
+  variant: 'figure' | 'avatar' = 'figure'
+): string {
+  const resolved = artResolver?.character?.(spec, expression, gesture, variant)
+  if (resolved) {
+    return `<img class="clyp-art clyp-art-character" src="${resolved}" alt="" aria-hidden="true" draggable="false"/>`
+  }
   const tone = SKIN_TONES.find((t) => t.id === spec.tone) ?? SKIN_TONES[0]
   const { h: hairC } = hairColors(spec.age)
   const uid = `cg-${specKey(spec).replace(/~/g, '-')}`
@@ -1013,5 +1043,9 @@ export const BACKGROUND_LIBRARY: BackgroundDef[] = [
 ]
 
 export function backgroundSvg(backgroundId: string | undefined): string {
+  const resolved = artResolver?.background?.(backgroundId)
+  if (resolved) {
+    return `<img class="clyp-art clyp-art-bg" src="${resolved}" alt="" aria-hidden="true" draggable="false"/>`
+  }
   return (BACKGROUND_LIBRARY.find((b) => b.id === backgroundId) ?? BACKGROUND_LIBRARY.find((b) => b.id === 'neutral'))!.svg
 }

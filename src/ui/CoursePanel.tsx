@@ -95,6 +95,31 @@ export function CoursePanel() {
       </section>
 
       <section className="card">
+        <h3>Character &amp; scene art</h3>
+        <p className="hint">
+          Blocks with characters and scene backgrounds (branching scenarios, conversations) can use the
+          built-in art engine: every character variant and background your course uses is automatically
+          rendered as a high-resolution image at compile time.
+        </p>
+        <div className="art-style-grid">
+          <button
+            className={`art-style-chip ${(course.artStyle ?? 'rendered') === 'rendered' ? 'is-selected' : ''}`}
+            onClick={() => mutate((c) => void (c.artStyle = 'rendered'))}
+          >
+            <b>✨ Rendered</b>
+            <span>High-end raster art — cinematic grade, soft shadows, film grain (PNG/JPG)</span>
+          </button>
+          <button
+            className={`art-style-chip ${course.artStyle === 'illustrated' ? 'is-selected' : ''}`}
+            onClick={() => mutate((c) => void (c.artStyle = 'illustrated'))}
+          >
+            <b>✏️ Illustrated</b>
+            <span>Clyp's original vector art — smallest file size, infinitely sharp</span>
+          </button>
+        </div>
+      </section>
+
+      <section className="card">
         <h3>Gamification</h3>
         <label className="check">
           <input
